@@ -1,0 +1,9 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "plugins": ["@microsoft/eslint-plugin-sdl", "security"],
+  "rules": {
+    "@microsoft/sdl/no-inner-html": "error",
+    "no-console": "warn",
+    "security/detect-object-injection": "warn"
+  }
+}

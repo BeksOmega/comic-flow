@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Exposure Trial VAR Exposure";
+  src:
+    url("./fonts/ExposureTrialVAR.ttf") format("truetype"),
+    url("./fonts/ExposureTrialVAR-Exposure.woff2") format("woff2"),
+    url("./fonts/ExposureTrialVAR-Exposure.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -8,8 +19,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-prose: "Exposure Trial VAR Exposure", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +29,45 @@
   }
 }
 
+@utility font-prose-italic {
+  font-family: var(--font-prose);
+  font-style: italic;
+}
+
+@utility transition-expo {
+  --opacity-duration: 300ms;
+  --expo-duration: 500ms;
+  --total-duration: calc(var(--opacity-duration) + var(--expo-duration));
+
+  transition:
+    opacity var(--opacity-duration) ease-in,
+    font-variation-settings var(--expo-duration) ease-out
+      var(--opacity-duration);
+
+  .rough-annotation {
+    opacity: inherit;
+    transition: opacity var(--total-duration) ease-in-out;
+  }
+}
+
+@utility expo-* {
+  font-variation-settings: "EXPO" --value(number);
+}
+
+@utility -expo-* {
+  font-variation-settings: "EXPO" calc(--value(number) * -1);
+}
+
+@utility opacity-inherit {
+  opacity: inherit;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-prose);
+}
+
+h1 {
+  font-size: 1.5rem;
 }

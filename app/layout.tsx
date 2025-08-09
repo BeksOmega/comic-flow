@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import clsx from "clsx";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -24,9 +14,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head></head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={clsx(
+          "antialiased",
+          "before:absolute before:inset-0 before:z-[-1] before:filter-[url('#roughpaper')]",
+        )}
       >
+        <svg className="h-0">
+          <filter id="roughpaper">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.02"
+              result="noise"
+              numOctaves="3"
+            />
+            <feDiffuseLighting in="noise" lightingColor="#fff" surfaceScale="4">
+              <feDistantLight azimuth="45" elevation="90" />
+            </feDiffuseLighting>
+          </filter>
+        </svg>
         {children}
       </body>
     </html>

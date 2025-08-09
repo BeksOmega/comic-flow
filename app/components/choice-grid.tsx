@@ -50,10 +50,18 @@ export default function ChoiceGrid({
   const [selected, setSelected] = useState<string[]>([]);
   const [hovered, setHovered] = useState<string | null>(null);
   const [customChoices, setCustomChoices] = useState<string[]>([]);
+  const [fadeCustomChoiceIn, setFadeCustomChoiceIn] = useState<boolean>(false);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
     null
   );
   const { playAudio } = useSharedAudio("/audio/pen-circle.wav");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFadeCustomChoiceIn(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const isValid = selected.length >= min;
 
@@ -61,7 +69,7 @@ export default function ChoiceGrid({
     onValidityChange?.(isValid);
   }, [isValid, onValidityChange]);
 
-  const handleChoiceSelection = useCallback((choice: string) => {
+  const addChoiceSelection = useCallback((choice: string) => {
     setSelected((prev) => {
       if (prev.includes(choice)) {
         return prev.filter((item) => item !== choice);
@@ -75,7 +83,7 @@ export default function ChoiceGrid({
     });
   }, []);
 
-  const deselectChoice = useCallback((choice: string) => {
+  const removeChoiceSelection = useCallback((choice: string) => {
     setSelected((prev) => prev.filter((item) => item !== choice));
   }, []);
 
@@ -99,8 +107,8 @@ export default function ChoiceGrid({
       }
       setDebounceTimer(
         setTimeout(() => {
-          handleChoiceSelection(value);
-        }, 400)
+          addChoiceSelection(value);
+        }, 600)
       );
     },
     [debounceTimer, setDebounceTimer]
@@ -111,6 +119,62 @@ export default function ChoiceGrid({
       clearTimeout(debounceTimer);
     }
   }, [debounceTimer]);
+
+  const handleSelectedInput = useCallback(
+    (
+      e: React.ChangeEvent<HTMLInputElement>,
+      index: number,
+      oldChoice: string
+    ) => {
+      const newChoice = e.target.value;
+      if (newChoice === "") {
+        setCustomChoices((prev) => [
+          ...prev.slice(0, index),
+          ...prev.slice(index + 1),
+        ]);
+        removeChoiceSelection(oldChoice);
+      } else {
+        setCustomChoices((prev) => [
+          ...prev.slice(0, index),
+          newChoice,
+          ...prev.slice(index + 1),
+        ]);
+        updateChoiceSelection(oldChoice, newChoice);
+      }
+    },
+    [debounceCustomChoice, removeChoiceSelection, updateChoiceSelection]
+  );
+
+  const handleUnselectedInput = useCallback(
+    (
+      e: React.ChangeEvent<HTMLInputElement>,
+      index: number,
+      oldChoice: string
+    ) => {
+      const newChoice = e.target.value;
+      if (newChoice === "") {
+        setCustomChoices((prev) => [
+          ...prev.slice(0, index),
+          ...prev.slice(index + 1),
+        ]);
+        cancelChoiceDebounce();
+      } else {
+        if (!oldChoice) {
+          setFadeCustomChoiceIn(false);
+          setTimeout(() => {
+            setFadeCustomChoiceIn(true);
+          }, 0);
+        }
+        setCustomChoices((prev) => [
+          ...prev.slice(0, index),
+          newChoice,
+          ...prev.slice(index + 1),
+        ]);
+        debounceCustomChoice(newChoice);
+      }
+    },
+    [debounceCustomChoice, removeChoiceSelection, updateChoiceSelection]
+  );
 
   return (
     <div
@@ -134,7 +198,7 @@ export default function ChoiceGrid({
           >
             {!selected.includes(choice) && (
               <button
-                onClick={() => handleChoiceSelection(choice)}
+                onClick={() => addChoiceSelection(choice)}
                 onMouseEnter={() => setHovered(choice)}
                 onMouseLeave={() => setHovered(null)}
                 className="cursor-pointer"
@@ -153,11 +217,9 @@ export default function ChoiceGrid({
           >
             {selected.includes(choice) && (
               <button
-                onClick={() => handleChoiceSelection(choice)}
+                onClick={() => addChoiceSelection(choice)}
                 onMouseEnter={() => setHovered(choice)}
                 onMouseLeave={() => setHovered(null)}
-                onMouseDown={() => setHovered(null)}
-                onMouseUp={() => setHovered(choice)}
                 className="cursor-pointer"
               >
                 {choice}
@@ -168,39 +230,43 @@ export default function ChoiceGrid({
       ))}
       {allowUserInput &&
         [...customChoices, ""].map((choice, index) => (
-          <div key={index}>
+          <div
+            key={index}
+            className={
+              choice === ""
+                ? clsx(
+                    "transition-expo",
+                    fadeCustomChoiceIn
+                      ? "opacity-100 expo-0"
+                      : "opacity-0 expo-100"
+                  )
+                : ""
+            }
+          >
             <RoughNotation
               type="underline"
-              show={!selected.includes(choice)}
+              show={true}
               animate={false}
               color="var(--color-neutral-400)"
               strokeWidth={2}
               padding={0}
+              className={clsx(
+                "anno:transition-opacity anno:duration-150",
+                !selected.includes(choice)
+                  ? "anno:opacity-100"
+                  : "anno:opacity-0"
+              )}
             >
               {!selected.includes(choice) && (
                 <input
                   type="text"
                   onClick={() => {
                     if (choice) {
-                      handleChoiceSelection(choice);
+                      addChoiceSelection(choice);
                     }
                   }}
                   onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    const newChoice = e.target.value;
-                    if (newChoice === "") {
-                      setCustomChoices((prev) => [
-                        ...prev.slice(0, index),
-                        ...prev.slice(index + 1),
-                      ]);
-                      cancelChoiceDebounce();
-                    } else {
-                      setCustomChoices((prev) => [
-                        ...prev.slice(0, index),
-                        newChoice,
-                        ...prev.slice(index + 1),
-                      ]);
-                      debounceCustomChoice(newChoice);
-                    }
+                    handleUnselectedInput(e, index, choice);
                   }}
                   className={clsx(
                     "max-w-md min-w-[125px] field-sizing-content",
@@ -224,21 +290,7 @@ export default function ChoiceGrid({
                 <input
                   type="text"
                   onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    const newChoice = e.target.value;
-                    if (newChoice === "") {
-                      setCustomChoices((prev) => [
-                        ...prev.slice(0, index),
-                        ...prev.slice(index + 1),
-                      ]);
-                      deselectChoice(choice);
-                    } else {
-                      setCustomChoices((prev) => [
-                        ...prev.slice(0, index),
-                        newChoice,
-                        ...prev.slice(index + 1),
-                      ]);
-                      updateChoiceSelection(choice, newChoice);
-                    }
+                    handleSelectedInput(e, index, choice);
                   }}
                   className={clsx(
                     "max-w-md min-w-[125px] field-sizing-content",

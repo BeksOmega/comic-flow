@@ -51,7 +51,10 @@ export default function Home() {
         fadeIn ? "opacity-100 expo-0" : "opacity-0 expo-100"
       )}
     >
-      <h1>The feel of the experience - Choose three</h1>
+      <h1>
+        The feel of the experience -{" "}
+        <span className="text-nowrap">Choose three</span>
+      </h1>
       <ChoiceGrid
         className="max-w-2xl pl-4"
         choices={FEEL_CHOICES}
@@ -60,7 +63,9 @@ export default function Home() {
         allowUserInput
       />
 
-      <h1>The draw of the story - Choose two</h1>
+      <h1>
+        The draw of the story - <span className="text-nowrap">Choose two</span>
+      </h1>
 
       <h1>Your inspirations</h1>
     </div>

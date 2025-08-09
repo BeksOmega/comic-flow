@@ -35,8 +35,8 @@
 }
 
 @utility transition-expo {
-  --opacity-duration: 300ms;
-  --expo-duration: 500ms;
+  --opacity-duration: 200ms;
+  --expo-duration: 600ms;
   --total-duration: calc(var(--opacity-duration) + var(--expo-duration));
 
   transition:

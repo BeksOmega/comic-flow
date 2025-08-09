@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { RoughNotation } from "react-rough-notation";
 import clsx from "clsx";
 
@@ -49,6 +49,10 @@ export default function ChoiceGrid({
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [customChoices, setCustomChoices] = useState<string[]>([]);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
   const { playAudio } = useSharedAudio("/audio/pen-circle.wav");
 
   const isValid = selected.length >= min;
@@ -57,7 +61,7 @@ export default function ChoiceGrid({
     onValidityChange?.(isValid);
   }, [isValid, onValidityChange]);
 
-  const handleChoiceClick = (choice: string) => {
+  const handleChoiceSelection = useCallback((choice: string) => {
     setSelected((prev) => {
       if (prev.includes(choice)) {
         return prev.filter((item) => item !== choice);
@@ -69,7 +73,44 @@ export default function ChoiceGrid({
         return [...prev, choice];
       }
     });
-  };
+  }, []);
+
+  const deselectChoice = useCallback((choice: string) => {
+    setSelected((prev) => prev.filter((item) => item !== choice));
+  }, []);
+
+  const updateChoiceSelection = useCallback(
+    (oldChoice: string, newChoice: string) => {
+      setSelected((prev) => {
+        const index = prev.indexOf(oldChoice);
+        if (index !== -1) {
+          return [...prev.slice(0, index), newChoice, ...prev.slice(index + 1)];
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
+  const debounceCustomChoice = useCallback(
+    (value: string) => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      setDebounceTimer(
+        setTimeout(() => {
+          handleChoiceSelection(value);
+        }, 400)
+      );
+    },
+    [debounceTimer, setDebounceTimer]
+  );
+
+  const cancelChoiceDebounce = useCallback(() => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+  }, [debounceTimer]);
 
   return (
     <div
@@ -87,7 +128,7 @@ export default function ChoiceGrid({
           >
             {!selected.includes(choice) && (
               <button
-                onClick={() => handleChoiceClick(choice)}
+                onClick={() => handleChoiceSelection(choice)}
                 onMouseEnter={() => setHovered(choice)}
                 onMouseLeave={() => setHovered(null)}
                 onMouseDown={() => setHovered(null)}
@@ -108,7 +149,7 @@ export default function ChoiceGrid({
           >
             {selected.includes(choice) && (
               <button
-                onClick={() => handleChoiceClick(choice)}
+                onClick={() => handleChoiceSelection(choice)}
                 onMouseEnter={() => setHovered(choice)}
                 onMouseLeave={() => setHovered(null)}
                 onMouseDown={() => setHovered(null)}
@@ -121,25 +162,92 @@ export default function ChoiceGrid({
           </RoughNotation>
         </div>
       ))}
-      {allowUserInput && (
-        <RoughNotation
-          type="underline"
-          show={true}
-          animate={false}
-          color="var(--color-neutral-400)"
-          strokeWidth={2}
-          padding={0}
-        >
-          <input
-            type="text"
-            className={clsx(
-              "max-w-md outline-none",
-              "font-prose-italic placeholder:text-neutral-500 field-sizing-content"
-            )}
-            placeholder="A custom choice"
-          />
-        </RoughNotation>
-      )}
+      {allowUserInput &&
+        [...customChoices, ""].map((choice, index) => (
+          <div key={index}>
+            <RoughNotation
+              type="underline"
+              show={!selected.includes(choice)}
+              animate={false}
+              color="var(--color-neutral-400)"
+              strokeWidth={2}
+              padding={0}
+            >
+              {!selected.includes(choice) && (
+                <input
+                  type="text"
+                  onClick={() => {
+                    if (choice) {
+                      handleChoiceSelection(choice);
+                    }
+                  }}
+                  onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const newChoice = e.target.value;
+                    if (newChoice === "") {
+                      setCustomChoices((prev) => [
+                        ...prev.slice(0, index),
+                        ...prev.slice(index + 1),
+                      ]);
+                      cancelChoiceDebounce();
+                    } else {
+                      setCustomChoices((prev) => [
+                        ...prev.slice(0, index),
+                        newChoice,
+                        ...prev.slice(index + 1),
+                      ]);
+                      debounceCustomChoice(newChoice);
+                    }
+                  }}
+                  className={clsx(
+                    "max-w-md min-w-[125px] field-sizing-content",
+                    "outline-none placeholder:text-neutral-500",
+                    "font-prose-italic text-center"
+                  )}
+                  placeholder="A custom choice"
+                  value={choice}
+                />
+              )}
+            </RoughNotation>
+            <RoughNotation
+              type="circle"
+              show={selected.includes(choice)}
+              color="var(--color-neutral-950)"
+              strokeWidth={2}
+              padding={6}
+              animationDuration={400}
+            >
+              {selected.includes(choice) && (
+                <input
+                  type="text"
+                  onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const newChoice = e.target.value;
+                    if (newChoice === "") {
+                      setCustomChoices((prev) => [
+                        ...prev.slice(0, index),
+                        ...prev.slice(index + 1),
+                      ]);
+                      deselectChoice(choice);
+                    } else {
+                      setCustomChoices((prev) => [
+                        ...prev.slice(0, index),
+                        newChoice,
+                        ...prev.slice(index + 1),
+                      ]);
+                      updateChoiceSelection(choice, newChoice);
+                    }
+                  }}
+                  className={clsx(
+                    "max-w-md min-w-[125px] field-sizing-content",
+                    "outline-none placeholder:text-neutral-500",
+                    "font-prose-italic text-center"
+                  )}
+                  placeholder="A custom choice"
+                  value={choice}
+                />
+              )}
+            </RoughNotation>
+          </div>
+        ))}
     </div>
   );
 }

@@ -29,6 +29,12 @@
   }
 }
 
+@custom-variant anno {
+  + .rough-annotation {
+    @slot;
+  }
+}
+
 @utility font-prose-italic {
   font-family: var(--font-prose);
   font-style: italic;

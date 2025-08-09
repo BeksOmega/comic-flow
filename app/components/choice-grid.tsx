@@ -120,19 +120,23 @@ export default function ChoiceGrid({
         <div key={`${choice}`}>
           <RoughNotation
             type="circle"
-            show={hovered === choice && !selected.includes(choice)}
+            show={true}
             color="var(--color-neutral-400)"
             strokeWidth={2}
             padding={6}
             animate={false}
+            className={clsx(
+              "anno:transition-opacity anno:duration-150",
+              hovered === choice && !selected.includes(choice)
+                ? "anno:opacity-100"
+                : "anno:opacity-0"
+            )}
           >
             {!selected.includes(choice) && (
               <button
                 onClick={() => handleChoiceSelection(choice)}
                 onMouseEnter={() => setHovered(choice)}
                 onMouseLeave={() => setHovered(null)}
-                onMouseDown={() => setHovered(null)}
-                onMouseUp={() => setHovered(choice)}
                 className="cursor-pointer"
               >
                 {choice}

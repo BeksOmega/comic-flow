@@ -189,6 +189,7 @@ export default function ChoiceGrid({
             strokeWidth={2}
             padding={6}
             animate={false}
+            // @ts-ignore
             className={clsx(
               "anno:transition-opacity anno:duration-150",
               hovered === choice && !selected.includes(choice)
@@ -250,6 +251,7 @@ export default function ChoiceGrid({
               color="var(--color-neutral-400)"
               strokeWidth={2}
               padding={0}
+              // @ts-ignore
               className={clsx(
                 "anno:transition-opacity anno:duration-150",
                 !selected.includes(choice)

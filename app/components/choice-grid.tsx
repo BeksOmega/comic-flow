@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RoughNotation } from "react-rough-notation";
 import clsx from "clsx";
 

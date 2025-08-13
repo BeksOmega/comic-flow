@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import ChoiceGrid from "./components/choice-grid";
 import { useState, useEffect } from "react";
+import LongInput from "./components/long-input";
 
 const FEEL_CHOICES = [
   "Action",
@@ -13,9 +14,11 @@ const FEEL_CHOICES = [
   "Surreal",
   "Cyberpunk",
   "Steampunk",
+  "Suspense",
   "Mythic",
+  "Thriller",
   "Shojo",
-  "Pulpy",
+  "Pulp",
   "Noir",
   "Gothic",
   "Magical Realism",
@@ -23,7 +26,6 @@ const FEEL_CHOICES = [
   "Shonen",
   "Slice of Life",
   "Mecha",
-  "Utopian",
   "Satirical",
   "Space Opera",
   "Historical",
@@ -33,8 +35,18 @@ const FEEL_CHOICES = [
   "Cutesy",
 ];
 
+const DRAW_CHOICES = [
+  "Mystery",
+  "Exploration",
+  "Humor",
+  "Character",
+  "World",
+  "Conflict",
+];
+
 export default function Home() {
   const [fadeIn, setFadeIn] = useState(false);
+  const [inspirations, setInspirations] = useState<string[]>(["", "", ""]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -58,16 +70,37 @@ export default function Home() {
       <ChoiceGrid
         className="max-w-2xl pl-4"
         choices={FEEL_CHOICES}
-        min={3}
+        min={1}
         max={3}
         allowUserInput
       />
 
-      <h1>
+      <h1 className="mt-4">
         The draw of the story - <span className="text-nowrap">Choose two</span>
       </h1>
+      <ChoiceGrid
+        className="max-w-2xl pl-4"
+        choices={DRAW_CHOICES}
+        min={1}
+        max={2}
+        allowUserInput
+      />
 
-      <h1>Your inspirations</h1>
+      <h1 className="mt-4">Your inspirations</h1>
+      {inspirations.map((inspiration, index) => (
+        <LongInput
+          key={index}
+          placeholder="Movie, tv show, book, thought"
+          value={inspiration}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setInspirations([
+              ...inspirations.slice(0, index),
+              e.target.value,
+              ...inspirations.slice(index + 1),
+            ])
+          }
+        />
+      ))}
     </div>
   );
 }

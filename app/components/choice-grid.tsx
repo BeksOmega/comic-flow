@@ -38,6 +38,7 @@ export default function ChoiceGrid({
   min,
   max,
   onValidityChange,
+  onSelectionChange,
   allowUserInput,
 }: {
   className?: string;
@@ -45,6 +46,7 @@ export default function ChoiceGrid({
   min: number;
   max: number;
   onValidityChange?: (isValid: boolean) => void;
+  onSelectionChange?: (selected: string[]) => void;
   allowUserInput?: boolean;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
@@ -68,6 +70,10 @@ export default function ChoiceGrid({
   useEffect(() => {
     onValidityChange?.(isValid);
   }, [isValid, onValidityChange]);
+
+  useEffect(() => {
+    onSelectionChange?.(selected);
+  }, [selected, onSelectionChange]);
 
   const addChoiceSelection = useCallback((choice: string) => {
     setSelected((prev) => {

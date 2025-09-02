@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:backend": "cd backend && ../venv/bin/python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:backend": "cd backend && GEMINI_API_KEY=${GEMINI_API_KEY} ../venv/bin/python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "install:backend": "./venv/bin/pip install -r backend/requirements.txt",
     "build": "next build",
     "build:static": "BUILD_STATIC=true next build",
     "start": "next start",

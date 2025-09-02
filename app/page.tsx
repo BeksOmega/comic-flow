@@ -173,7 +173,38 @@ export default function Home() {
           <h2 className="text-xl font-semibold text-green-800 mb-4">
             Generated Story Settings
           </h2>
-          <div className="space-y-3">
+
+          {/* Input Summary */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-lg font-medium text-blue-800 mb-3">
+              Your Input
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <strong className="text-blue-700">Feel Choices:</strong>
+                <p className="text-blue-800">
+                  {apiResponse.generated_content.input_feelings.join(", ")}
+                </p>
+              </div>
+              <div>
+                <strong className="text-blue-700">Story Draws:</strong>
+                <p className="text-blue-800">
+                  {apiResponse.generated_content.input_draws.join(", ")}
+                </p>
+              </div>
+              <div>
+                <strong className="text-blue-700">Inspirations:</strong>
+                <p className="text-blue-800">
+                  {apiResponse.generated_content.inspirations_used.length > 0
+                    ? apiResponse.generated_content.inspirations_used.join(", ")
+                    : "None specified"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Generated Content */}
+          <div className="space-y-4 mb-6">
             <div>
               <strong className="text-green-700">Story Title:</strong>
               <p className="text-green-800">
@@ -198,14 +229,16 @@ export default function Home() {
                 {apiResponse.generated_content.plot_hook}
               </p>
             </div>
-            {apiResponse.generated_content.inspirations_used.length > 0 && (
-              <div>
-                <strong className="text-green-700">Inspirations Used:</strong>
-                <p className="text-green-800">
-                  {apiResponse.generated_content.inspirations_used.join(", ")}
-                </p>
-              </div>
-            )}
+          </div>
+
+          {/* Raw LLM Response */}
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-800 mb-3">
+              AI Generated Content
+            </h3>
+            <div className="bg-white p-4 rounded border text-gray-700 whitespace-pre-wrap font-mono text-sm">
+              {apiResponse.generated_content.llm_response}
+            </div>
           </div>
         </div>
       )}

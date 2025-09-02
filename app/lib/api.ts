@@ -16,6 +16,9 @@ export interface GenerateSettingsResponse {
     setting: string;
     plot_hook: string;
     inspirations_used: string[];
+    llm_response: string;
+    input_feelings: string[];
+    input_draws: string[];
   };
 }
 

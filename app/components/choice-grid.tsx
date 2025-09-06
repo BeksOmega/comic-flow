@@ -40,6 +40,7 @@ export default function ChoiceGrid({
   onValidityChange,
   onSelectionChange,
   allowUserInput,
+  defaultSelected = [],
 }: {
   className?: string;
   choices: string[];
@@ -48,8 +49,9 @@ export default function ChoiceGrid({
   onValidityChange?: (isValid: boolean) => void;
   onSelectionChange?: (selected: string[]) => void;
   allowUserInput?: boolean;
+  defaultSelected?: string[];
 }) {
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(defaultSelected);
   const [hovered, setHovered] = useState<string | null>(null);
   const [customChoices, setCustomChoices] = useState<string[]>([]);
   const [fadeCustomChoiceIn, setFadeCustomChoiceIn] = useState<boolean>(false);

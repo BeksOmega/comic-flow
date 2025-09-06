@@ -2,47 +2,36 @@
 
 import clsx from "clsx";
 import ChoiceGrid from "./components/choice-grid";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { generateSettings, GenerateSettingsResponse } from "./lib/api";
-
-const FEEL_CHOICES = [
-  "Action",
-  "Drama",
-  "Romance",
-  "Comedy",
-  "Isekai",
-  "Surreal",
-  "Cyberpunk",
-  "Steampunk",
-  "Mythic",
-  "Shojo",
-  "Pulpy",
-  "Noir",
-  "Gothic",
-  "Magical Realism",
-  "Horror",
-  "Shonen",
-  "Slice of Life",
-  "Mecha",
-  "Utopian",
-  "Satirical",
-  "Space Opera",
-  "Historical",
-  "Dystopian",
-  "War",
-  "Cozy",
-  "Cutesy",
-];
+import {
+  FEEL_CHOICES,
+  STORY_DRAW_CHOICES,
+  GENERIC_SCALE_CHOICES,
+  getScaleChoices,
+  Scale,
+} from "./lib/options";
 
 export default function Home() {
   const [fadeIn, setFadeIn] = useState(false);
   const [selectedFeels, setSelectedFeels] = useState<string[]>([]);
   const [selectedDraws, setSelectedDraws] = useState<string[]>([]);
+  const [selectedScale, setSelectedScale] = useState<string>("");
   const [inspirations, setInspirations] = useState<string[]>([]);
   const [apiResponse, setApiResponse] =
     useState<GenerateSettingsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const scaleChoices = useMemo(() => {
+    const scaleChoicesMap = getScaleChoices(selectedFeels);
+    const pairs = Array.from(scaleChoicesMap.entries());
+    pairs.sort((a, b) => a[0] - b[0]);
+    const choices: string[] = pairs.flatMap(([_, labels]) => labels);
+    return choices.length > 0
+      ? choices
+      : Array.from(GENERIC_SCALE_CHOICES.values());
+  }, [selectedFeels]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -52,8 +41,14 @@ export default function Home() {
   }, []);
 
   const handleGenerateSettings = async () => {
-    if (selectedFeels.length < 3 || selectedDraws.length < 2) {
-      setError("Please select 3 feel choices and 2 story draws first");
+    if (
+      selectedFeels.length < 3 ||
+      selectedDraws.length < 2 ||
+      !selectedScale
+    ) {
+      setError(
+        "Please select 3 feel choices, 2 story draws, and 1 scale first"
+      );
       return;
     }
 
@@ -65,6 +60,7 @@ export default function Home() {
       const response = await generateSettings({
         feel_choices: selectedFeels,
         story_draws: selectedDraws,
+        scale: selectedScale,
         inspirations: inspirations,
       });
       setApiResponse(response);
@@ -92,6 +88,7 @@ export default function Home() {
       <ChoiceGrid
         className="max-w-2xl pl-4"
         choices={FEEL_CHOICES}
+        defaultSelected={FEEL_CHOICES.slice(0, 3)}
         min={3}
         max={3}
         allowUserInput
@@ -103,43 +100,27 @@ export default function Home() {
       </h1>
       <ChoiceGrid
         className="max-w-2xl pl-4"
-        choices={[
-          "Character Development",
-          "World Building",
-          "Plot Twists",
-          "Emotional Journey",
-          "Action Sequences",
-          "Mystery",
-          "Romance",
-          "Friendship",
-          "Growth",
-          "Conflict Resolution",
-        ]}
+        choices={STORY_DRAW_CHOICES}
+        defaultSelected={STORY_DRAW_CHOICES.slice(0, 2)}
         min={2}
         max={2}
         allowUserInput
         onSelectionChange={setSelectedDraws}
       />
 
-      <h1>Your inspirations</h1>
+      <h1>
+        The scale of the story - <span className="text-nowrap">Choose one</span>
+      </h1>
       <ChoiceGrid
         className="max-w-2xl pl-4"
-        choices={[
-          "Lord of the Rings",
-          "Star Wars",
-          "Studio Ghibli",
-          "Marvel Comics",
-          "DC Comics",
-          "Anime Classics",
-          "Manga Favorites",
-          "Literary Works",
-          "Films",
-          "TV Shows",
-        ]}
-        min={0}
-        max={5}
+        choices={scaleChoices}
+        defaultSelected={[]}
+        min={1}
+        max={1}
         allowUserInput
-        onSelectionChange={setInspirations}
+        onSelectionChange={(scales) => {
+          setSelectedScale(scales[0] || "");
+        }}
       />
 
       {/* Generate Settings Button */}
@@ -147,7 +128,10 @@ export default function Home() {
         <button
           onClick={handleGenerateSettings}
           disabled={
-            isLoading || selectedFeels.length < 3 || selectedDraws.length < 2
+            isLoading ||
+            selectedFeels.length < 3 ||
+            selectedDraws.length < 2 ||
+            !selectedScale
           }
           className={clsx(
             "px-6 py-3 rounded-lg font-medium transition-colors",
@@ -179,7 +163,7 @@ export default function Home() {
             <h3 className="text-lg font-medium text-blue-800 mb-3">
               Your Input
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
                 <strong className="text-blue-700">Feel Choices:</strong>
                 <p className="text-blue-800">
@@ -190,6 +174,12 @@ export default function Home() {
                 <strong className="text-blue-700">Story Draws:</strong>
                 <p className="text-blue-800">
                   {apiResponse.generated_content.input_draws.join(", ")}
+                </p>
+              </div>
+              <div>
+                <strong className="text-blue-700">Scale:</strong>
+                <p className="text-blue-800">
+                  {apiResponse.generated_content.scale || "Not specified"}
                 </p>
               </div>
               <div>

@@ -4,6 +4,7 @@ const API_BASE_URL =
 export interface GenerateSettingsRequest {
   feel_choices: string[];
   story_draws: string[];
+  scale: string;
   inspirations: string[];
 }
 
@@ -15,6 +16,7 @@ export interface GenerateSettingsResponse {
     main_character: string;
     setting: string;
     plot_hook: string;
+    scale: string;
     inspirations_used: string[];
     llm_response: string;
     input_feelings: string[];

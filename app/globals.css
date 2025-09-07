@@ -17,6 +17,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-prose: "Exposure Trial VAR Exposure", sans-serif;
+  --opacity-duration: 200ms;
+  --expo-duration: 600ms;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,8 +40,6 @@
 }
 
 @utility transition-expo {
-  --opacity-duration: 200ms;
-  --expo-duration: 600ms;
   --total-duration: calc(var(--opacity-duration) + var(--expo-duration));
 
   transition:

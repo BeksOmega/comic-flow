@@ -3,6 +3,10 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { RoughNotation } from "react-rough-notation";
 import clsx from "clsx";
 
+// Animation timing constants
+// Must match css variables --opacity-duration + --expo-duration
+const FADE_IN_OUT_DURATION = 1200;
+
 // Shared audio instance - only one per page
 let sharedAudioInstance: HTMLAudioElement | null = null;
 
@@ -131,7 +135,7 @@ function CustomChoice({
     >
       <RoughNotation
         type="underline"
-        show={true}
+        show={!isSelected}
         animate={false}
         color="var(--color-neutral-400)"
         strokeWidth={2}
@@ -145,11 +149,7 @@ function CustomChoice({
         {!isSelected && (
           <input
             type="text"
-            onClick={() => {
-              if (choice) {
-                onClick();
-              }
-            }}
+            onClick={() => choice && onClick()}
             onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
               onInput(e, index, choice);
             }}
@@ -217,6 +217,12 @@ export default function ChoiceGrid({
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
     null
   );
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [animationPhase, setAnimationPhase] = useState<
+    "idle" | "fadeOut" | "fadeIn"
+  >("idle");
+  const [displayedChoices, setDisplayedChoices] = useState<string[]>(choices);
+  const previousChoicesRef = useRef<string[]>(choices);
   const { playAudio } = useSharedAudio("/audio/pen-circle.wav");
 
   useEffect(() => {
@@ -225,6 +231,32 @@ export default function ChoiceGrid({
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle choice changes with animation
+  useEffect(() => {
+    const previousChoices = previousChoicesRef.current;
+    const choicesChanged =
+      JSON.stringify(previousChoices) !== JSON.stringify(choices);
+
+    if (choicesChanged && !isAnimating) {
+      setIsAnimating(true);
+      setAnimationPhase("fadeOut");
+      setTimeout(() => {
+        setDisplayedChoices(choices);
+        setSelected((prevSelected) =>
+          prevSelected.filter((choice) => choices.includes(choice))
+        );
+
+        setAnimationPhase("fadeIn");
+        setTimeout(() => {
+          setAnimationPhase("idle");
+          setIsAnimating(false);
+        }, FADE_IN_OUT_DURATION);
+      }, FADE_IN_OUT_DURATION);
+    }
+
+    previousChoicesRef.current = choices;
+  }, [choices, isAnimating]);
 
   const isValid = selected.length >= min;
 
@@ -345,9 +377,16 @@ export default function ChoiceGrid({
 
   return (
     <div
-      className={`flex flex-wrap gap-x-4 gap-y-2 opacity-inherit ${className || ""}`}
+      className={clsx(
+        "flex flex-wrap gap-x-4 gap-y-2 transition-expo",
+        "[--opacity-duration:300ms] [--expo-duration:900ms]",
+        animationPhase === "fadeOut"
+          ? "opacity-0 expo-100"
+          : "opacity-100 expo-0",
+        className || ""
+      )}
     >
-      {choices.map((choice) => (
+      {displayedChoices.map((choice) => (
         <IndividualChoice
           key={choice}
           choice={choice}
@@ -360,19 +399,28 @@ export default function ChoiceGrid({
       ))}
       {allowUserInput &&
         [...customChoices, ""].map((choice, index) => (
-          <CustomChoice
+          <div
             key={index}
-            choice={choice}
-            index={index}
-            isSelected={selected.includes(choice)}
-            fadeIn={fadeCustomChoiceIn}
-            onInput={
-              selected.includes(choice)
-                ? handleSelectedInput
-                : handleUnselectedInput
-            }
-            onClick={() => addChoiceSelection(choice)}
-          />
+            className={clsx(
+              "transition-expo",
+              animationPhase === "fadeOut"
+                ? "opacity-0 expo-100"
+                : "opacity-100 expo-0"
+            )}
+          >
+            <CustomChoice
+              choice={choice}
+              index={index}
+              isSelected={selected.includes(choice)}
+              fadeIn={fadeCustomChoiceIn}
+              onInput={
+                selected.includes(choice)
+                  ? handleSelectedInput
+                  : handleUnselectedInput
+              }
+              onClick={() => addChoiceSelection(choice)}
+            />
+          </div>
         ))}
     </div>
   );

@@ -9,7 +9,6 @@ import {
   STORY_DRAW_CHOICES,
   GENERIC_SCALE_CHOICES,
   getScaleChoices,
-  Scale,
 } from "./lib/options";
 
 export default function Home() {

@@ -32,6 +32,165 @@ const useSharedAudio = (audioSrc: string) => {
   return { playAudio, isLoaded };
 };
 
+// Individual choice component for predefined choices
+function IndividualChoice({
+  choice,
+  isSelected,
+  isHovered,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  choice: string;
+  isSelected: boolean;
+  isHovered: boolean;
+  onClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
+  return (
+    <div key={`${choice}`}>
+      <RoughNotation
+        type="circle"
+        show={isHovered && !isSelected}
+        color="var(--color-neutral-400)"
+        strokeWidth={2}
+        padding={6}
+        animate={false}
+        // @ts-ignore
+        className={clsx(
+          "anno:transition-opacity anno:duration-150",
+          isHovered && !isSelected ? "anno:opacity-100" : "anno:opacity-0"
+        )}
+      >
+        {!isSelected && (
+          <button
+            onClick={onClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            className="cursor-pointer"
+          >
+            {choice}
+          </button>
+        )}
+      </RoughNotation>
+      <RoughNotation
+        type="circle"
+        show={isSelected}
+        color="var(--color-neutral-950)"
+        strokeWidth={2}
+        padding={6}
+        animationDuration={400}
+      >
+        {isSelected && (
+          <button
+            onClick={onClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            className="cursor-pointer"
+          >
+            {choice}
+          </button>
+        )}
+      </RoughNotation>
+    </div>
+  );
+}
+
+// Custom choice component for user input
+function CustomChoice({
+  choice,
+  index,
+  isSelected,
+  fadeIn,
+  onInput,
+  onClick,
+}: {
+  choice: string;
+  index: number;
+  isSelected: boolean;
+  fadeIn: boolean;
+  onInput: (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number,
+    oldChoice: string
+  ) => void;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      key={index}
+      className={
+        choice === ""
+          ? clsx(
+              "transition-expo",
+              fadeIn ? "opacity-100 expo-0" : "opacity-0 expo-100"
+            )
+          : ""
+      }
+    >
+      <RoughNotation
+        type="underline"
+        show={true}
+        animate={false}
+        color="var(--color-neutral-400)"
+        strokeWidth={2}
+        padding={0}
+        // @ts-ignore
+        className={clsx(
+          "anno:transition-opacity anno:duration-150",
+          !isSelected ? "anno:opacity-100" : "anno:opacity-0"
+        )}
+      >
+        {!isSelected && (
+          <input
+            type="text"
+            onClick={() => {
+              if (choice) {
+                onClick();
+              }
+            }}
+            onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+              onInput(e, index, choice);
+            }}
+            className={clsx(
+              "max-w-md min-w-[125px] field-sizing-content",
+              "outline-none placeholder:text-neutral-500",
+              "font-prose-italic text-center"
+            )}
+            placeholder="A custom choice"
+            value={choice}
+          />
+        )}
+      </RoughNotation>
+      <RoughNotation
+        type="circle"
+        show={isSelected}
+        color="var(--color-neutral-950)"
+        strokeWidth={2}
+        padding={6}
+        animationDuration={400}
+      >
+        {isSelected && (
+          <input
+            type="text"
+            onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+              onInput(e, index, choice);
+            }}
+            className={clsx(
+              "max-w-md min-w-[125px] field-sizing-content",
+              "outline-none placeholder:text-neutral-500",
+              "font-prose-italic text-center"
+            )}
+            placeholder="A custom choice"
+            value={choice}
+          />
+        )}
+      </RoughNotation>
+    </div>
+  );
+}
+
 export default function ChoiceGrid({
   className,
   choices,
@@ -189,130 +348,31 @@ export default function ChoiceGrid({
       className={`flex flex-wrap gap-x-4 gap-y-2 opacity-inherit ${className || ""}`}
     >
       {choices.map((choice) => (
-        <div key={`${choice}`}>
-          <RoughNotation
-            type="circle"
-            show={true}
-            color="var(--color-neutral-400)"
-            strokeWidth={2}
-            padding={6}
-            animate={false}
-            // @ts-ignore
-            className={clsx(
-              "anno:transition-opacity anno:duration-150",
-              hovered === choice && !selected.includes(choice)
-                ? "anno:opacity-100"
-                : "anno:opacity-0"
-            )}
-          >
-            {!selected.includes(choice) && (
-              <button
-                onClick={() => addChoiceSelection(choice)}
-                onMouseEnter={() => setHovered(choice)}
-                onMouseLeave={() => setHovered(null)}
-                className="cursor-pointer"
-              >
-                {choice}
-              </button>
-            )}
-          </RoughNotation>
-          <RoughNotation
-            type="circle"
-            show={selected.includes(choice)}
-            color="var(--color-neutral-950)"
-            strokeWidth={2}
-            padding={6}
-            animationDuration={400}
-          >
-            {selected.includes(choice) && (
-              <button
-                onClick={() => addChoiceSelection(choice)}
-                onMouseEnter={() => setHovered(choice)}
-                onMouseLeave={() => setHovered(null)}
-                className="cursor-pointer"
-              >
-                {choice}
-              </button>
-            )}
-          </RoughNotation>
-        </div>
+        <IndividualChoice
+          key={choice}
+          choice={choice}
+          isSelected={selected.includes(choice)}
+          isHovered={hovered === choice}
+          onClick={() => addChoiceSelection(choice)}
+          onMouseEnter={() => setHovered(choice)}
+          onMouseLeave={() => setHovered(null)}
+        />
       ))}
       {allowUserInput &&
         [...customChoices, ""].map((choice, index) => (
-          <div
+          <CustomChoice
             key={index}
-            className={
-              choice === ""
-                ? clsx(
-                    "transition-expo",
-                    fadeCustomChoiceIn
-                      ? "opacity-100 expo-0"
-                      : "opacity-0 expo-100"
-                  )
-                : ""
+            choice={choice}
+            index={index}
+            isSelected={selected.includes(choice)}
+            fadeIn={fadeCustomChoiceIn}
+            onInput={
+              selected.includes(choice)
+                ? handleSelectedInput
+                : handleUnselectedInput
             }
-          >
-            <RoughNotation
-              type="underline"
-              show={true}
-              animate={false}
-              color="var(--color-neutral-400)"
-              strokeWidth={2}
-              padding={0}
-              // @ts-ignore
-              className={clsx(
-                "anno:transition-opacity anno:duration-150",
-                !selected.includes(choice)
-                  ? "anno:opacity-100"
-                  : "anno:opacity-0"
-              )}
-            >
-              {!selected.includes(choice) && (
-                <input
-                  type="text"
-                  onClick={() => {
-                    if (choice) {
-                      addChoiceSelection(choice);
-                    }
-                  }}
-                  onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    handleUnselectedInput(e, index, choice);
-                  }}
-                  className={clsx(
-                    "max-w-md min-w-[125px] field-sizing-content",
-                    "outline-none placeholder:text-neutral-500",
-                    "font-prose-italic text-center"
-                  )}
-                  placeholder="A custom choice"
-                  value={choice}
-                />
-              )}
-            </RoughNotation>
-            <RoughNotation
-              type="circle"
-              show={selected.includes(choice)}
-              color="var(--color-neutral-950)"
-              strokeWidth={2}
-              padding={6}
-              animationDuration={400}
-            >
-              {selected.includes(choice) && (
-                <input
-                  type="text"
-                  onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    handleSelectedInput(e, index, choice);
-                  }}
-                  className={clsx(
-                    "max-w-md min-w-[125px] field-sizing-content",
-                    "outline-none placeholder:text-neutral-500",
-                    "font-prose-italic text-center"
-                  )}
-                  placeholder="A custom choice"
-                  value={choice}
-                />
-              )}
-            </RoughNotation>
-          </div>
+            onClick={() => addChoiceSelection(choice)}
+          />
         ))}
     </div>
   );

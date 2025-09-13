@@ -1,11 +1,26 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { RoughNotation } from "react-rough-notation";
 import clsx from "clsx";
 
 // Animation timing constants
 // Must match css variables --opacity-duration + --expo-duration
 const FADE_IN_OUT_DURATION = 1200;
+
+export interface ChoiceRef {
+  rerender: () => void;
+}
+
+export interface Annotation {
+  markDirty: () => void;
+}
 
 // Shared audio instance - only one per page
 let sharedAudioInstance: HTMLAudioElement | null = null;
@@ -37,90 +52,127 @@ const useSharedAudio = (audioSrc: string) => {
 };
 
 // Individual choice component for predefined choices
-function IndividualChoice({
-  choice,
-  isSelected,
-  isHovered,
-  onClick,
-  onMouseEnter,
-  onMouseLeave,
-}: {
-  choice: string;
-  isSelected: boolean;
-  isHovered: boolean;
-  onClick: () => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-}) {
-  return (
-    <div key={`${choice}`}>
-      <RoughNotation
-        type="circle"
-        show={isHovered && !isSelected}
-        color="var(--color-neutral-400)"
-        strokeWidth={2}
-        padding={6}
-        animate={false}
-        // @ts-ignore
-        className={clsx(
-          "anno:transition-opacity anno:duration-150",
-          isHovered && !isSelected ? "anno:opacity-100" : "anno:opacity-0"
-        )}
-      >
-        {!isSelected && (
-          <button
-            onClick={onClick}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            className="cursor-pointer"
-          >
-            {choice}
-          </button>
-        )}
-      </RoughNotation>
-      <RoughNotation
-        type="circle"
-        show={isSelected}
-        color="var(--color-neutral-950)"
-        strokeWidth={2}
-        padding={6}
-        animationDuration={400}
-      >
-        {isSelected && (
-          <button
-            onClick={onClick}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            className="cursor-pointer"
-          >
-            {choice}
-          </button>
-        )}
-      </RoughNotation>
-    </div>
-  );
-}
+const IndividualChoice = forwardRef<
+  ChoiceRef,
+  {
+    choice: string;
+    isSelected: boolean;
+    isHovered: boolean;
+    onClick: () => void;
+    onMouseEnter: () => void;
+    onMouseLeave: () => void;
+  }
+>(
+  (
+    { choice, isSelected, isHovered, onClick, onMouseEnter, onMouseLeave },
+    ref
+  ) => {
+    const selectionAnnotation = useRef<Annotation | null>(null);
+    const hoverAnnotation = useRef<Annotation | null>(null);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        rerender: () => {
+          console.log(`rerender() called on choice: ${choice}`);
+          selectionAnnotation.current?.markDirty();
+          hoverAnnotation.current?.markDirty();
+        },
+      }),
+      [choice]
+    );
+
+    return (
+      <div key={`${choice}`}>
+        <RoughNotation
+          type="circle"
+          show={isHovered && !isSelected}
+          color="var(--color-neutral-400)"
+          strokeWidth={2}
+          padding={6}
+          animate={false}
+          getAnnotationObject={(annotation: unknown) =>
+            (hoverAnnotation.current = annotation as Annotation)
+          }
+          // @ts-ignore
+          className={clsx(
+            "anno:transition-opacity anno:duration-150",
+            isHovered && !isSelected ? "anno:opacity-100" : "anno:opacity-0"
+          )}
+        >
+          {!isSelected && (
+            <button
+              onClick={onClick}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+              className="cursor-pointer"
+            >
+              {choice}
+            </button>
+          )}
+        </RoughNotation>
+        <RoughNotation
+          type="circle"
+          show={isSelected}
+          color="var(--color-neutral-950)"
+          strokeWidth={2}
+          padding={6}
+          animationDuration={400}
+          // Types are not properly exported so we use unknown and cast.
+          getAnnotationObject={(annotation: unknown) =>
+            (selectionAnnotation.current = annotation as Annotation)
+          }
+        >
+          {isSelected && (
+            <button
+              onClick={onClick}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+              className="cursor-pointer"
+            >
+              {choice}
+            </button>
+          )}
+        </RoughNotation>
+      </div>
+    );
+  }
+);
+
+// Add display name for debugging
+IndividualChoice.displayName = "IndividualChoice";
 
 // Custom choice component for user input
-function CustomChoice({
-  choice,
-  index,
-  isSelected,
-  fadeIn,
-  onInput,
-  onClick,
-}: {
-  choice: string;
-  index: number;
-  isSelected: boolean;
-  fadeIn: boolean;
-  onInput: (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number,
-    oldChoice: string
-  ) => void;
-  onClick: () => void;
-}) {
+const CustomChoice = forwardRef<
+  ChoiceRef,
+  {
+    choice: string;
+    index: number;
+    isSelected: boolean;
+    fadeIn: boolean;
+    onInput: (
+      e: React.ChangeEvent<HTMLInputElement>,
+      index: number,
+      oldChoice: string
+    ) => void;
+    onClick: () => void;
+  }
+>(({ choice, index, isSelected, fadeIn, onInput, onClick }, ref) => {
+  const selectionAnnotation = useRef<Annotation | null>(null);
+  const noSelectionAnnotation = useRef<Annotation | null>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      rerender: () => {
+        console.log(`rerender() called on choice: ${choice}`);
+        selectionAnnotation.current?.markDirty();
+        noSelectionAnnotation.current?.markDirty();
+      },
+    }),
+    [choice]
+  );
+
   return (
     <div
       key={index}
@@ -145,6 +197,9 @@ function CustomChoice({
           "anno:transition-opacity anno:duration-150",
           !isSelected ? "anno:opacity-100" : "anno:opacity-0"
         )}
+        getAnnotationObject={(annotation: unknown) =>
+          (noSelectionAnnotation.current = annotation as Annotation)
+        }
       >
         {!isSelected && (
           <input
@@ -170,6 +225,9 @@ function CustomChoice({
         strokeWidth={2}
         padding={6}
         animationDuration={400}
+        getAnnotationObject={(annotation: unknown) =>
+          (selectionAnnotation.current = annotation as Annotation)
+        }
       >
         {isSelected && (
           <input
@@ -189,7 +247,7 @@ function CustomChoice({
       </RoughNotation>
     </div>
   );
-}
+});
 
 export default function ChoiceGrid({
   className,
@@ -223,6 +281,8 @@ export default function ChoiceGrid({
   >("idle");
   const [displayedChoices, setDisplayedChoices] = useState<string[]>(choices);
   const previousChoicesRef = useRef<string[]>(choices);
+  const choiceRefs = useRef<Map<string, ChoiceRef>>(new Map());
+  const customChoiceRefs = useRef<Map<number, ChoiceRef>>(new Map());
   const { playAudio } = useSharedAudio("/audio/pen-circle.wav");
 
   useEffect(() => {
@@ -247,6 +307,11 @@ export default function ChoiceGrid({
           prevSelected.filter((choice) => choices.includes(choice))
         );
 
+        // Rerender after a frame to give the choiceRefs a chance to update.
+        requestAnimationFrame(() => {
+          choiceRefs.current.forEach((ref) => ref.rerender());
+          customChoiceRefs.current.forEach((ref) => ref.rerender());
+        });
         setAnimationPhase("fadeIn");
         setTimeout(() => {
           setAnimationPhase("idle");
@@ -389,6 +454,13 @@ export default function ChoiceGrid({
       {displayedChoices.map((choice) => (
         <IndividualChoice
           key={choice}
+          ref={(ref) => {
+            if (ref) {
+              choiceRefs.current.set(choice, ref);
+            } else {
+              choiceRefs.current.delete(choice);
+            }
+          }}
           choice={choice}
           isSelected={selected.includes(choice)}
           isHovered={hovered === choice}
@@ -419,6 +491,13 @@ export default function ChoiceGrid({
                   : handleUnselectedInput
               }
               onClick={() => addChoiceSelection(choice)}
+              ref={(ref) => {
+                if (ref) {
+                  customChoiceRefs.current.set(index, ref);
+                } else {
+                  customChoiceRefs.current.delete(index);
+                }
+              }}
             />
           </div>
         ))}

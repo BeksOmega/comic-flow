@@ -18,22 +18,8 @@ export default function RootLayout({
       <body
         className={clsx(
           "antialiased",
-          "before:absolute before:inset-0 before:z-[-1] before:filter-[url('#roughpaper')]",
         )}
       >
-        <svg className="h-0">
-          <filter id="roughpaper">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.02"
-              result="noise"
-              numOctaves="3"
-            />
-            <feDiffuseLighting in="noise" lightingColor="#fff" surfaceScale="4">
-              <feDistantLight azimuth="45" elevation="90" />
-            </feDiffuseLighting>
-          </filter>
-        </svg>
         {children}
       </body>
     </html>

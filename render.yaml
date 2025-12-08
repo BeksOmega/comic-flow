@@ -8,7 +8,7 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: GEMINI_API_KEY
-        fromSecret: GEMINI_API_KEY
+        value: "dummy-key"
     domains:
       - aiday-backend.onrender.com
   - type: staticsite
@@ -17,6 +17,6 @@ services:
     staticPublishPath: ./out
     rewriteRules:
       - source: /api/*
-        destination: https://aiday-backend.onrender.com/api/*
+        destination: http://aiday-backend:8000/api/*
       - source: /*
         destination: /index.html

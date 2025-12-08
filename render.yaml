@@ -1,0 +1,22 @@
+previews: true
+services:
+  - type: web
+    name: aiday-backend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+    healthCheckPath: /api/health
+    envVars:
+      - key: GEMINI_API_KEY
+        fromSecret: GEMINI_API_KEY
+    domains:
+      - aiday-backend.onrender.com
+  - type: staticsite
+    name: aiday-frontend
+    buildCommand: npm run build:static
+    staticPublishPath: ./out
+    rewriteRules:
+      - source: /api/*
+        destination: https://aiday-backend.onrender.com/api/*
+      - source: /*
+        destination: /index.html

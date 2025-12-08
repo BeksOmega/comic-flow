@@ -76,8 +76,7 @@ export default function Home() {
     <div
       className={clsx(
         "m-4 flex flex-col gap-4",
-        "transition-expo",
-        fadeIn ? "opacity-100 expo-0" : "opacity-0 expo-100"
+        "transition-expo"
       )}
     >
       <h1>
